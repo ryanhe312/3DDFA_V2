@@ -100,6 +100,7 @@ class TDDFA_ONNX(object):
         size = self.size
 
         ver_lst = []
+        std_ver_lst = []
         for param, roi_box in zip(param_lst, roi_box_lst):
             R, offset, alpha_shp, alpha_exp = _parse_param(param)
             if dense_flag:
@@ -115,4 +116,20 @@ class TDDFA_ONNX(object):
 
             ver_lst.append(pts3d)
 
-        return ver_lst
+            param[:9] = self.param_mean[:9]
+            R, offset, alpha_shp, alpha_exp = _parse_param(param)
+
+            if dense_flag:
+                inp_dct = {
+                    'R': R, 'offset': offset, 'alpha_shp': alpha_shp, 'alpha_exp': alpha_exp
+                }
+                pts3d = self.bfm_session.run(None, inp_dct)[0]
+                pts3d = similar_transform(pts3d, roi_box, size)
+            else:
+                pts3d = R @ (self.u_base + self.w_shp_base @ alpha_shp + self.w_exp_base @ alpha_exp). \
+                    reshape(3, -1, order='F') + offset
+                pts3d = similar_transform(pts3d, roi_box, size)
+
+            std_ver_lst.append(pts3d)
+
+        return ver_lst, std_ver_lst

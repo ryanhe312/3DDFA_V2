@@ -41,6 +41,7 @@ def main(args):
 
     # Given a still image path and load to BGR channel
     img = cv2.imread(args.img_fp)
+    h, w, c = img.shape
 
     # Detect faces, get 3DMM params and roi boxes
     boxes = face_boxes(img)
@@ -50,6 +51,7 @@ def main(args):
         sys.exit(-1)
     print(f'Detect {n} faces')
 
+    # boxes = [[0,0,w,h,1]]
     param_lst, roi_box_lst = tddfa(img, boxes)
 
     # Visualization and serialization
@@ -59,14 +61,14 @@ def main(args):
 
     wfp = f'examples/results/{args.img_fp.split("/")[-1].replace(old_suffix, "")}_{args.opt}' + new_suffix
 
-    ver_lst = tddfa.recon_vers(param_lst, roi_box_lst, dense_flag=dense_flag)
+    ver_lst, std_ver_lst = tddfa.recon_vers(param_lst, roi_box_lst, dense_flag=dense_flag)
 
     if args.opt == '2d_sparse':
         draw_landmarks(img, ver_lst, show_flag=args.show_flag, dense_flag=dense_flag, wfp=wfp)
     elif args.opt == '2d_dense':
         draw_landmarks(img, ver_lst, show_flag=args.show_flag, dense_flag=dense_flag, wfp=wfp)
     elif args.opt == '3d':
-        render(img, ver_lst, tddfa.tri, alpha=0.6, show_flag=args.show_flag, wfp=wfp)
+        render(img, ver_lst, tddfa.tri, alpha=0.6, show_flag=args.show_flag, wfp=wfp, std_ver_lst=std_ver_lst)
     elif args.opt == 'depth':
         # if `with_bf_flag` is False, the background is black
         depth(img, ver_lst, tddfa.tri, show_flag=args.show_flag, wfp=wfp, with_bg_flag=True)

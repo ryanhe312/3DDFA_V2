@@ -52,16 +52,17 @@ def bilinear_interpolate(img, x, y):
 
     return wa[..., np.newaxis] * i_a + wb[..., np.newaxis] * i_b + wc[..., np.newaxis] * i_c + wd[..., np.newaxis] * i_d
 
-def render(img, ver_lst, tri, alpha=0.6, show_flag=False, wfp=None, with_bg_flag=False):
+def render(img, ver_lst, tri, std_ver_lst, alpha=0.6, show_flag=False, wfp=None, with_bg_flag=False, ):
     if with_bg_flag:
         overlap = img.copy()
     else:
         overlap = np.zeros_like(img)
 
-    for ver_ in ver_lst:
+    for ver_,std_ver_ in zip(ver_lst, std_ver_lst):
         ver = _to_ctype(ver_.T)  # transpose
+        std_ver = _to_ctype(std_ver_.T)
         colors = bilinear_interpolate(img, ver[:, 0], ver[:, 1]) / 255.
-        overlap = render_app(ver, tri, overlap, colors)
+        overlap = render_app(std_ver, tri, overlap, colors)
 
     if with_bg_flag:
         res = cv2.addWeighted(img, 1 - alpha, overlap, alpha, 0)
